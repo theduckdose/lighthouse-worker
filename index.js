@@ -34,9 +34,8 @@ const logger = winston.createLogger({
   transports: [transport, new winston.transports.Console()],
 });
 
-// // Check for required environment variables
+// Check for required environment variables
 const googleCredentialsPath = process.env.GOOGLE_CREDENTIALS_PATH;
-console.log("🚀 ~ googleCredentialsPath:", googleCredentialsPath);
 if (!googleCredentialsPath) {
   throw new Error("GOOGLE_CREDENTIALS_PATH environment variable is not set.");
 }
@@ -126,7 +125,7 @@ async function saveToGoogleSheets(data) {
 // Upload HTML file to S3
 async function uploadToS3(filePath, bucketName, key) {
   // Get current date in YYYY/MM/DD format
-  const datePrefix = format(new Date(), "yyyy/MM/dd");
+  const datePrefix = format(new Date(), "yyyy-MM-dd");
 
   // Create S3 key with date prefix
   const s3Key = path.join(datePrefix, key);
