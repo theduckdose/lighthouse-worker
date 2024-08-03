@@ -29,6 +29,18 @@ npm install -g pm2
 pm2 start index.js --name "lighthouse-monitor"
 ```
 
+### Check Production
+
+```
+pm2 list
+```
+
+### Stop Production
+
+```
+pm2 stop lighthouse-monitor
+```
+
 ### Prerequisites
 
 - Node.js (version 20 or higher)
