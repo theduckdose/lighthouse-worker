@@ -7,12 +7,13 @@ import fs from "fs/promises";
 import path from "path";
 import { format } from "date-fns";
 import dotenv from "dotenv";
+import crypto from "crypto";
 import winston from "winston";
 import "winston-daily-rotate-file";
 
 dotenv.config();
 
-// // Configure daily rotation logging
+// Configure daily rotation logging
 const transport = new winston.transports.DailyRotateFile({
   filename: "logs/%DATE%-combined.log",
   datePattern: "YYYY-MM-DD",
@@ -93,8 +94,9 @@ async function saveToGoogleSheets(data) {
 
   const values = [
     [
-      new Date(),
-      data.device, // Device type in column 2
+      data.date,
+      data.device,
+      data.urlKey,
       data.lhr.finalUrl,
       data.lhr.categories.performance?.score ?? "N/A",
       data.lhr.categories.accessibility?.score ?? "N/A",
@@ -150,9 +152,21 @@ async function uploadToS3(filePath, bucketName, key) {
   }
 }
 
+function hashStringTo12Digits(input) {
+  // Create a SHA-256 hash of the input
+  const hash = crypto.createHash("sha256").update(input).digest("hex");
+
+  // Convert the hash to base 36 to shorten its length
+  const base36Hash = BigInt("0x" + hash).toString(36);
+
+  // Trim or pad the result to 12 digits
+  return base36Hash.slice(0, 12).padStart(12, "0");
+}
+
 // Main function to run Lighthouse, save results, and upload to S3
 async function runAndSave(url, opts, bucketName) {
   const startTime = new Date();
+  const urlKey = hashStringTo12Digits(url);
   logger.info(
     `Processing started at ${startTime.toISOString()} for URL: ${url}`
   );
@@ -169,7 +183,7 @@ async function runAndSave(url, opts, bucketName) {
     return; // Exit if Lighthouse run fails
   }
 
-  const fileName = `${startTime.toISOString()}-lighthouse-report-${
+  const fileName = `${startTime.toISOString()}-${urlKey}-lighthouse-report-${
     opts.formFactor
   }.html`;
   const filePath = path.join("outputs", fileName);
@@ -204,6 +218,8 @@ async function runAndSave(url, opts, bucketName) {
         userAgent: result.lhr.userAgent,
       },
       device: opts.formFactor, // Pass device type to the function
+      date: startTime.toISOString(),
+      urlKey: urlKey,
     });
 
     // Upload HTML report to S3
