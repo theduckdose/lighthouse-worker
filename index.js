@@ -140,7 +140,7 @@ async function uploadToS3(filePath, bucketName, s3Path) {
 
   try {
     await s3Client.send(command);
-    logger.info(`File uploaded to S3: ${s3Key}`);
+    logger.info(`File uploaded to S3: ${s3Path}`);
   } catch (error) {
     logger.error(`Error uploading file to S3: ${error.message}`);
     throw error;
@@ -181,9 +181,10 @@ async function runAndSave(url, opts, bucketName) {
   const fileName = `${startTime.toISOString()}-${urlKey}-lighthouse-report-${
     opts.formFactor
   }.html`;
-  const filePath = path.join("outputs", fileName);
+  const tempName = `${startTime.getTime()}.html`;
+  const filePath = path.join("outputs", tempName);
   const datePrefix = format(new Date(), "yyyy-MM-dd");
-  const s3Path = path.join(datePrefix, fileName);
+  const s3Path = `${datePrefix}/${fileName}`;
   const link = `${process.env.HOST}/${s3Path}`;
 
   try {
