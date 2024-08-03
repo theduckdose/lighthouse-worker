@@ -1,0 +1,46 @@
+# Node modules
+node_modules/
+
+# Log files
+*.log
+
+# Environment files
+.env
+.env.local
+
+# npm debug log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Directory for local test coverage reports
+coverage/
+
+# Build output
+dist/
+build/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE and editor directories
+.vscode/
+.idea/
+
+# PM2 process files
+pids/
+*.pid
+*.pid.lock
+
+# S3 or other cloud service related files
+*.html # if you want to exclude HTML files
+
+# Ignore outputs directory
+outputs/
+
+# Ignore logs directory
+logs/
+
+# Ignore credentials files
+google-credentials/
