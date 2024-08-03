@@ -33,6 +33,7 @@ pm2 start index.js --name "lighthouse-monitor"
 
 ```
 pm2 list
+pm2 logs lighthouse-monitor
 ```
 
 ### Stop Production
