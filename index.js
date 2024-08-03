@@ -104,6 +104,7 @@ async function saveToGoogleSheets(data) {
       data.lhr.categories.seo?.score ?? "N/A",
       data.lhr.categories.pwa?.score ?? "N/A",
       data.lhr.userAgent,
+      data.link,
     ],
   ];
 
@@ -187,6 +188,7 @@ async function runAndSave(url, opts, bucketName) {
     opts.formFactor
   }.html`;
   const filePath = path.join("outputs", fileName);
+  const link = `${process.env.HOST}/${filePath}`;
 
   try {
     // Write the HTML report to a file in the outputs directory
@@ -220,6 +222,7 @@ async function runAndSave(url, opts, bucketName) {
       device: opts.formFactor, // Pass device type to the function
       date: startTime.toISOString(),
       urlKey: urlKey,
+      link: link,
     });
 
     // Upload HTML report to S3

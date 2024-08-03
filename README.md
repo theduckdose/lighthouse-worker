@@ -46,7 +46,7 @@ pm2 stop lighthouse-monitor
 
 - Node.js (version 20 or higher)
 - npm (Node Package Manager)
-- AWS account with S3 bucket
+- AWS account with S3 bucket and Routing Hosting to S3 bucket
 - Google Cloud account with access to Google Sheets API
 
 ### Environment Variables
@@ -61,4 +61,5 @@ AWS_ACCESS_KEY_ID=your-access-key-id
 AWS_SECRET_ACCESS_KEY=your-secret-access-key
 S3_BUCKET_NAME=your-s3-bucket-name
 TARGET_URL=https://example1.com,https://example2.com
+HOST=https://www.yourdomain.com
 ```
