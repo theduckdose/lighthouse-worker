@@ -169,7 +169,9 @@ async function runAndSave(url, opts, bucketName) {
     return; // Exit if Lighthouse run fails
   }
 
-  const fileName = `lighthouse-report-${opts.formFactor}-${Date.now()}.html`;
+  const fileName = `${startTime.toISOString()}-lighthouse-report-${
+    opts.formFactor
+  }.html`;
   const filePath = path.join("outputs", fileName);
 
   try {
@@ -255,6 +257,7 @@ async function main() {
   if (isDev) {
     processLighthouse();
   } else {
+    logger.info(`Cron 0 * * * * is started`);
     cron.schedule("0 * * * *", async () => {
       processLighthouse();
     });
