@@ -126,18 +126,12 @@ async function saveToGoogleSheets(data) {
 }
 
 // Upload HTML file to S3
-async function uploadToS3(filePath, bucketName, key) {
-  // Get current date in YYYY/MM/DD format
-  const datePrefix = format(new Date(), "yyyy-MM-dd");
-
-  // Create S3 key with date prefix
-  const s3Key = path.join(datePrefix, key);
-
+async function uploadToS3(filePath, bucketName, s3Path) {
   const fileContent = await fs.readFile(filePath);
 
   const params = {
     Bucket: bucketName,
-    Key: s3Key,
+    Key: s3Path,
     Body: fileContent,
     ContentType: "text/html",
   };
@@ -188,7 +182,9 @@ async function runAndSave(url, opts, bucketName) {
     opts.formFactor
   }.html`;
   const filePath = path.join("outputs", fileName);
-  const link = `${process.env.HOST}/${filePath}`;
+  const datePrefix = format(new Date(), "yyyy-MM-dd");
+  const s3Path = path.join(datePrefix, fileName);
+  const link = `${process.env.HOST}/${s3Path}`;
 
   try {
     // Write the HTML report to a file in the outputs directory
@@ -226,7 +222,7 @@ async function runAndSave(url, opts, bucketName) {
     });
 
     // Upload HTML report to S3
-    await uploadToS3(filePath, bucketName, fileName);
+    await uploadToS3(filePath, bucketName, s3Path);
   } catch (error) {
     logger.error(`Error during saving or uploading: ${error.message}`);
   } finally {
