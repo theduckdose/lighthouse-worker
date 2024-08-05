@@ -76,7 +76,7 @@ async function runLighthouse(url, device, size, id) {
     if (device === "mobile") {
       screenEmulation = `--screenEmulation.mobile --screenEmulation.width=${size.width} --screenEmulation.height=${size.height} --screenEmulation.deviceScaleFactor=2`;
     } else if (device === "desktop") {
-      screenEmulation = `--screenEmulation.mobile=false --screenEmulation.width=${size.width} --screenEmulation.height=${size.height} --screenEmulation.deviceScaleFactor=1`;
+      screenEmulation = `--screenEmulation.mobile=false --screenEmulation.width=${size.width} --screenEmulation.height=${size.height} --screenEmulation.deviceScaleFactor=1 --preset=desktop`;
     }
     const command = `lighthouse ${url} --chrome-flags="--headless" --output=json --output=html --output-path=./outputs/${id} --quiet --form-factor=${device} ${screenEmulation}`;
     logger.info(`Running command ${command}`);
