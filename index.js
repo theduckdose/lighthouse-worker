@@ -243,12 +243,25 @@ async function runAndSave(url, opts, bucketName) {
 
 const desktopOpts = {
   formFactor: "desktop",
-  screenEmulation: { disabled: true },
+  screenEmulation: {
+    width: 1366,
+    height: 768,
+    deviceScaleFactor: 1,
+    mobile: false,
+    disabled: false,
+  },
   output: "html",
 };
 
 const mobileOpts = {
   formFactor: "mobile",
+  screenEmulation: {
+    mobile: true,
+    width: 375, // iPhone 6/7/8 plus screen width
+    height: 667, // iphone 6/7/8 plus screen height
+    deviceScaleFactor: 1.75, // iphone 6/7/8 plus screen density
+    disabled: false,
+  },
   output: "html",
 };
 
