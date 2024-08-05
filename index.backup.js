@@ -1,3 +1,5 @@
+import lighthouse from "lighthouse";
+import { launch } from "chrome-launcher";
 import cron from "node-cron";
 import { google } from "googleapis";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
@@ -7,7 +9,6 @@ import { format } from "date-fns";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import winston from "winston";
-import { exec } from "child_process";
 import "winston-daily-rotate-file";
 
 dotenv.config();
@@ -70,38 +71,23 @@ async function ensureDirectoryExists(dirPath) {
 }
 
 // Run Lighthouse and save results
-async function runLighthouse(url, device, size, id) {
-  return new Promise((resolve, reject) => {
-    let screenEmulation = "";
-    if (device === "mobile") {
-      screenEmulation = `--screenEmulation.mobile --screenEmulation.width=${size.width} --screenEmulation.height=${size.height} --screenEmulation.deviceScaleFactor=2`;
-    } else if (device === "desktop") {
-      screenEmulation = `--screenEmulation.mobile=false --screenEmulation.width=${size.width} --screenEmulation.height=${size.height} --screenEmulation.deviceScaleFactor=1`;
-    }
-    const command = `lighthouse ${url} --chrome-flags="--headless" --output=json --output=html --output-path=./outputs/${id} --quiet --form-factor=${device} ${screenEmulation}`;
-    logger.info(`Running command ${command}`);
-    exec(command, async (error, stdout, stderr) => {
-      if (error) {
-        logger.error(`Error running Lighthouse for ${url}: ${error.message}`);
-        reject(error);
-      } else {
-        logger.info(`Lighthouse run successful for ${url}`);
-        const jsonContent = await fs.readFile(
-          `./outputs/${id}.report.json`,
-          "utf-8"
-        );
-        const result = {
-          lhr: JSON.parse(jsonContent),
-        };
-        resolve(result);
-      }
+async function runLighthouse(url, opts, config = null) {
+  const chrome = await launch({ chromeFlags: ["--headless"] });
+  opts.port = chrome.port;
 
-      if (stderr) {
-        logger.error(`Lighthouse stderr for ${url}: ${stderr}`);
-      }
-    });
-  });
+  try {
+    const result = await lighthouse(url, opts, config);
+    logger.info(`Lighthouse run successful for ${url}`);
+    return result;
+  } catch (error) {
+    logger.error(`Error running Lighthouse for ${url}: ${error.message}`);
+    throw error;
+  } finally {
+    await chrome.kill();
+    logger.info(`Chrome instance killed for ${url}`);
+  }
 }
+
 // Save JSON data to Google Sheets
 async function saveToGoogleSheets(data) {
   const authClient = await auth.getClient();
@@ -185,12 +171,7 @@ async function runAndSave(url, opts, bucketName) {
 
   let result;
   try {
-    result = await runLighthouse(
-      url,
-      opts.device,
-      opts.size,
-      startTime.getTime()
-    );
+    result = await runLighthouse(url, opts);
     logger.info(`Lighthouse run successful for ${url}`);
   } catch (error) {
     logger.error(`Error running Lighthouse for ${url}: ${error.message}`);
@@ -198,18 +179,17 @@ async function runAndSave(url, opts, bucketName) {
   }
 
   const fileName = `${startTime.toISOString()}-${urlKey}-lighthouse-report-${
-    opts.device
+    opts.formFactor
   }.html`;
-  const tempName = `${startTime.getTime()}.report.html`;
-  const jsonTempName = `${startTime.getTime()}.report.json`;
+  const tempName = `${startTime.getTime()}.html`;
   const filePath = path.join("outputs", tempName);
-  const jsonFilePath = path.join("outputs", jsonTempName);
   const datePrefix = format(new Date(), "yyyy-MM-dd");
   const s3Path = `${datePrefix}/${fileName}`;
   const link = `${process.env.HOST}/${s3Path}`;
 
   try {
     // Write the HTML report to a file in the outputs directory
+    await fs.writeFile(filePath, result.report);
     logger.info(`HTML report written to file: ${filePath}`);
 
     // Check the structure of result.lhr
@@ -236,21 +216,20 @@ async function runAndSave(url, opts, bucketName) {
         },
         userAgent: result.lhr.userAgent,
       },
-      device: opts.device, // Pass device type to the function
+      device: opts.formFactor, // Pass device type to the function
       date: startTime.toISOString(),
       urlKey: urlKey,
       link: link,
     });
 
-    // // Upload HTML report to S3
-    // await uploadToS3(filePath, bucketName, s3Path);
+    // Upload HTML report to S3
+    await uploadToS3(filePath, bucketName, s3Path);
   } catch (error) {
     logger.error(`Error during saving or uploading: ${error.message}`);
   } finally {
     // Delete the local HTML file
     try {
-      // await fs.unlink(filePath);
-      // await fs.unlink(jsonFilePath);
+      await fs.unlink(filePath);
       logger.info(`Local HTML file deleted: ${filePath}`);
     } catch (error) {
       logger.error(`Error deleting local HTML file: ${error.message}`);
@@ -263,8 +242,8 @@ async function runAndSave(url, opts, bucketName) {
 }
 
 const desktopOpts = {
-  device: "desktop",
-  size: {
+  formFactor: "desktop",
+  screenEmulation: {
     width: 1366,
     height: 768,
     deviceScaleFactor: 1,
@@ -275,8 +254,8 @@ const desktopOpts = {
 };
 
 const mobileOpts = {
-  device: "mobile",
-  size: {
+  formFactor: "mobile",
+  screenEmulation: {
     mobile: true,
     width: 375, // iPhone 6/7/8 plus screen width
     height: 667, // iphone 6/7/8 plus screen height

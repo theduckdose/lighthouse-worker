@@ -6,7 +6,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "start:backup": "node index.backup.js",
     "start:dev": "node index.js --dev",
+    "start:backup:dev": "node index.backup.js --dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
